@@ -195,15 +195,15 @@ class Partition:
 
 class Vertex:
     '''
-    Vertex of LWGraph. Stores (unique, integer) vertex identifier under label,
+    Lightweight vertex. Stores (unique, integer) vertex identifier under label,
     an adjacency list of arcs starting at this vertex. 
     and pointers to the current cell (first position of cell, and the vertex's own position).
     '''
     def __init__(self, label: int) -> None:
         self.label = label
-        self.cell : Cell = None
-        self.cellPos : ListNode = None
-        self.adj : list[Vertex] = []
+        self.cell: Cell = None
+        self.cellPos: ListNode = None
+        self.adj: list[Vertex] = []
     
     def __repr__(self) -> str:
         return f"vertex {self.label}"
@@ -240,18 +240,3 @@ class Arc:
     
     def __eq__(self, other: Arc) -> bool:
         return self.x == other.x and self.y == other.y
-
-class LWGraph:
-    '''
-    Light Weight graph representation as needed for modular decomposition in
-    O(n+m*log(n)) time. Stores list of vertices, where each Vertex keeps tracks of
-    its own adjacencies. Moreover, the graph stores a partition of its vertices
-    '''
-    def __init__(self, vertices, partition) -> None:
-        self.vertices = vertices
-        self.partition = partition
-    
-    def inducedSubGraph(vertexSet):
-        '''Returns induced subgraph on given vertexSet as a new LWGraph instance. The underlying
-        partition is kept, containing only the vertices of the subgraph.'''
-        pass
