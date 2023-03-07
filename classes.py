@@ -183,6 +183,11 @@ class Partition:
                 node.data.cellPos = node
 
         return Partition(newCells, newPartitionSize)
+
+    def reconcile(self) -> Partition:
+        '''
+        Re'''
+        pass 
     
     def union(self, partition):
         '''

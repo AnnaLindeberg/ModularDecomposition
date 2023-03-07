@@ -3,6 +3,15 @@ import networkx as nx
 from classes import *
 import auxiliary as aux
 
+
+def recOVP(partition: Partition) -> nx.DiGraph:
+    if partition.size  == 1:
+        T = nx.DiGraph()
+        T.add_node(partition.cells[0].elements.head.data.label)
+        return T
+    
+    # TODO: unfinished
+
 def unreducedMD(partition: Partition) -> nx.DiGraph:
     '''
     Meant to implement the full algorithm of paper.
@@ -14,8 +23,10 @@ def unreducedMD(partition: Partition) -> nx.DiGraph:
     
     # pick "smallest" vertex
     # TODO: what, exactly, do they mean with smallest here? see alg 1 of paper
-    # here we pick smallest as appearing first in first cell of partition
+    # here we pick smallest as appearing first in first cell of partition: is that a bad idea?
     pivotVertex = partition.cells[0].elements.head.data
+
+    # find the partition G(P,v) with ordered vertex partition
     partition.createCell(pivotVertex)
     maxModules = aux.orderedVertexPartition(partition)
     return maxModules
@@ -64,7 +75,6 @@ def graphToPartition(graph: nx.Graph) -> Partition:
     cell.elements.reverse()
 
     return Partition([cell], nx.number_of_nodes(graph))
-
 
 
 
