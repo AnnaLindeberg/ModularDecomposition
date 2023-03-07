@@ -1,18 +1,31 @@
 import networkx as nx
 # TODO: bad import
 from classes import *
+import auxiliary as aux
 
 def unreducedMD(partition: Partition) -> nx.DiGraph:
     '''
     Meant to implement the full algorithm of paper.
     '''
-    pass
+    if partition.size == 1:
+        T = nx.DiGraph()
+        T.add_node(partition.cells[0].elements.head.data.label)
+        return T
+    
+    # pick "smallest" vertex
+    # TODO: what, exactly, do they mean with smallest here? see alg 1 of paper
+    # here we pick smallest as appearing first in first cell of partition
+    pivotVertex = partition.cells[0].elements.head.data
+    partition.createCell(pivotVertex)
+    maxModules = aux.orderedVertexPartition(partition)
+    return maxModules
 
 def reduceMD(modDecomp: nx.DiGraph) -> nx.DiGraph:
     '''
     Meant to calculate reduced modular decomposition from (possibly) unreduced modular decomposition.
     '''
-    pass
+    # TODO: actually reduce
+    return modDecomp
 
 def graphToPartition(graph: nx.Graph) -> Partition:
     '''
@@ -62,6 +75,6 @@ def modularDecomposition(graph: nx.Graph) -> nx.DiGraph:
     return reduceMD(unreducedMD(graphToPartition(graph)))
 
 G = nx.complete_graph(4)
-p = graphToPartition(G)
+MD = modularDecomposition(G)
 
-print(p)
+print(MD)

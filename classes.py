@@ -17,7 +17,7 @@ class DL_list:
     '''
     Primitive doubly linked list of ListNode elements
     '''
-    def __init__(self, nodes: list[ListNode] | None =None) -> None:
+    def __init__(self, nodes: list[int] | None = None) -> None:
         self.head = None
         if nodes is not None:
             node = ListNode(data=nodes.pop(0))
@@ -65,7 +65,13 @@ class DL_list:
             last = current
             current = current.previous
 
-        self.head = last            
+        self.head = last
+
+    def len(self) -> int:
+        count = 0
+        for _ in self:
+            count += 1
+        return count           
 
 # l = DL_list([1,2,3,4,5])
 # print(l)
@@ -191,6 +197,41 @@ class Partition:
         
         self.size += partition.size
 
+    def createCell(self, vertex: Vertex) -> None:
+        '''
+        Takes a vertex in the partition and puts it in its own cell.
+        Usually called when the partition has a single cell, singling out
+        a single-vertex cell. 
+        '''
+        # vertex already in its own cell
+        if vertex.cell.elements.len() == 1:
+            return
+
+        # remove vertex from current cell
+        cellPos = vertex.cellPos
+        # is the vertex first in its cell? then change 
+        if cellPos == vertex.cell.elements.head:
+            vertex.cell.elements.head = cellPos.next
+        # then relink adjacent listnodes (as long as they exist)
+        if cellPos.previous is not None:
+            cellPos.previous.next = cellPos.next
+        if cellPos.next is not None:
+            cellPos.next.previous = cellPos.previous
+
+        # update indices of cells
+        for cell in self.cells:
+            if cell.pre < vertex.cell.pre:
+                cell.pre += 1
+                cell.post -= 1
+        
+        vertex.cell.pre += 1
+
+        # then, at last, create the new cell.
+        tmp = DL_list()
+        tmp.prepend(vertex.cellPos)
+        newCell = Cell(tmp, 1, self.size - 2)
+        vertex.cell = newCell
+        self.cells = [newCell] + self.cells
                 
 
 class Vertex:

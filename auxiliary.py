@@ -138,7 +138,8 @@ def orderedVertexPartition(partition : Partition) -> Partition:
     # pick non-maximal element of partition
     # TODO: why? is it only for run-time analysis?
     cell = min(partition.cells)
-    left, right = split(partition, cell, arcsFromCell(cell))
+    arcs = arcsFromCell(cell)
+    left, right = split(partition, cell, arcs)
     
     combined = orderedVertexPartition(left)
     combined.union(orderedVertexPartition(right))
