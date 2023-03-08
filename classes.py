@@ -1,90 +1,15 @@
 from __future__ import annotations
-
-class ListNode:
-    def __init__(self, data : Vertex):
-        self.data = data
-        self.next : ListNode | None = None
-        self.previous : ListNode | None = None
-    
-    def __str__(self) -> str:
-        # VERY verbose version
-        # pre = self.previous.data if self.previous is not None else None
-        # post = self.next.data if self.next is not None else None
-        # return f"Node[{self.data}, pre {pre}, post {post}]"
-        return f"[{self.data}]"
-
-class DL_list:
-    '''
-    Primitive doubly linked list of ListNode elements
-    '''
-    def __init__(self, nodes: list[int] | None = None) -> None:
-        self.head = None
-        if nodes is not None:
-            node = ListNode(data=nodes.pop(0))
-            self.head = node
-            for elem in nodes:
-                node.next = ListNode(data=elem)
-                node.next.previous = node
-                node = node.next
-    
-    def __iter__(self):
-        node = self.head
-        while node is not None:
-            yield node
-            node = node.next
-    
-    def __str__(self) -> str:
-        s = ""
-        for el in self:
-            s += str(el) + ' -- '
-        return s[:-4]
-
-    def __repr__(self) -> str:
-        return str(self)
-    
-    def __contains__(self, vertex: Vertex):
-        for node in self:
-            if node.data == vertex:
-                return True
-        return False
-    
-    def prepend(self, node):
-        node.next = self.head
-        if self.head is not None:
-            self.head.previous = node
-        self.head = node
-    
-    def reverse(self):
-        current = self.head
-        last = current
-        while current is not None:
-            tmp = current.previous
-            current.previous = current.next
-            current.next = tmp
-
-            last = current
-            current = current.previous
-
-        self.head = last
-
-    def len(self) -> int:
-        count = 0
-        for _ in self:
-            count += 1
-        return count           
-
-# l = DL_list([1,2,3,4,5])
-# print(l)
-# l.reverse()
-# print(l)
+from collections import deque
+import networkx as nx
 
 class Cell:
-    def __init__(self, elements : DL_list, pre : int, post: int) -> None:
-        #DL_list of elements
+    def __init__(self, elements: deque[int], pre: int, post: int) -> None:
+        # deque of elements – doubly linked list
         self.elements = elements
         # integers counting elements before/after this cell, more concretely:
         # pre = (sum of cardinalities of cells before this cell) + 1
         # post = (sum of cardinalities of cells after this cell) - 1
+        # hence we have (for each cell) that  pre + post + cardinality(cell) = no. of nodes in underlying graph
         self.pre = pre
         self.post = post
     
@@ -97,28 +22,26 @@ class Cell:
     def __repr__(self) -> str:
         return str(self)
     
-    def __lt__(self, otherCell) -> bool:
+    def __lt__(self, otherCell: Cell) -> bool:
         # assumes cells are part of same partition
         return self.pre < otherCell.pre
 
-    def __contains__(self, vertex : Vertex):
+    def __contains__(self, vertex: int):
         return vertex in self.elements
-
-    def elementsAsList(self):
+    
+    def __eq__(self, other: Cell) -> bool:
+        return self.elements == other.elements and self.pre == other.pre and self.post == other.post
+    
+    def copy(self) -> Cell:
         '''
-        returns elements as python list instead of DL_list
+        Returns a copy of this cell, including a (shallow) copy of its list of elements. 
         '''
-        res = []
-        for vertex in self.elements:
-            res.append(vertex.data)
-        
-        return res
+        elemCopy = self.elements.copy()
+        return Cell(elemCopy, self.pre, self.post)
 
 class Partition:
-    '''
-    Partition of vertices
-    '''
-    def __init__(self, cells : list[Cell], size : int) -> None:
+
+    def __init__(self, cells: list[Cell], size: int) -> None:
         '''
         
         '''
@@ -135,154 +58,75 @@ class Partition:
     def __repr__(self) -> str:
         return str(self)
     
-    def restrict(self, cells : list[Cell]) -> Partition:
+    def restrict(self, graph: nx.Graph, cells: list[Cell]) -> Partition:
         '''
-        Returns new partition ("deep copied" – all underlying vertices etc are new instances)
-        restricted to the given cells. In particular the edges in the adjacency list of the
-        given cells' vertices are restricted so that both endpoints lie in one of the given cells.
+        Returns new partition restricted to copies of the given cells. 
+        In particular, if all cells of the partition is given as input, a copy of the partition is given.
         '''
-        vertices = []
+        # find size of new partition
+        newPartitionSize = 0
         for cell in cells:
-            vertices.extend(cell.elementsAsList())
-
-        # create copies of vertices, initially with no adjacencies
-        newVertices = {}
-        for vertex in vertices:
-            newVertices[vertex.label] = Vertex(label= vertex.label)
-        
-        # copy arcs
-        for vertex in vertices:
-            newVertex = newVertices[vertex.label]
-            for arc in vertex.adj:
-                if arc.y not in vertices:
-                    continue
-                newEndPoint = newVertices[arc.y.label]
-                newArc = Arc(newVertex, newEndPoint)
-                newVertex.adj.append(newArc)
-
-                # if the twin arc has been created, we can link them
-                possibleTwinArc = newEndPoint.findArc(newVertex)
-                if possibleTwinArc is not None:
-                    possibleTwinArc.twin = newArc
-                    newArc.twin = possibleTwinArc
+            newPartitionSize += len(cell.elements)
         
         # copy cells – here I assume the cells are given in the order they should appear
         # since I don't want to think about how complicated it gets otherwise
-        newPartitionSize = len(vertices)
         newCells = []
         preCount = 1
         for cell in cells:
-            tmp = cell.elementsAsList()
-            newCell = Cell(DL_list([newVertices[v.label] for v in tmp]), preCount, newPartitionSize - preCount - len(tmp))
+            newCell = cell.copy()
+
+            newCell.pre = preCount
+            newCell.post = newPartitionSize - preCount - len(newCell.elements)
+
             newCells.append(newCell)
-            preCount += len(tmp)
+            preCount += len(newCell.elements)
 
             # lastly add pointers from the new vertices to their cell and cell position
-            for node in newCell.elements:
-                node.data.cell = newCell
-                node.data.cellPos = node
+            for cellIdx, vertex in enumerate(cell.elements):
+                graph.nodes[vertex]['cell'] = newCell
+                graph.nodes[vertex]['cellIdx'] = cellIdx
 
         return Partition(newCells, newPartitionSize)
-
-    def reconcile(self) -> Partition:
-        '''
-        Re'''
-        pass 
     
     def union(self, partition):
         '''
         Extends this partition by adding the given cells at 'the end' of this partition
         '''
+        # update indices of existing cells
         for cell in self.cells:
             cell.post += partition.size
 
+        # add the given cells with updated indices
         for cell in partition.cells:
             cell.pre += self.size
             self.cells.append(cell)
         
         self.size += partition.size
 
-    def createCell(self, vertex: Vertex) -> None:
+    def createCell(self, graph: nx.Graph, vertex: int) -> None:
         '''
         Takes a vertex in the partition and puts it in its own cell.
         Usually called when the partition has a single cell, singling out
         a single-vertex cell. 
         '''
-        # vertex already in its own cell
-        if vertex.cell.elements.len() == 1:
-            return
+        currentCell = graph.nodes[vertex]['cell']
 
+        # vertex already in its own cell
+        if len(currentCell.elements) == 1:
+            return
+        
         # remove vertex from current cell
-        cellPos = vertex.cellPos
-        # is the vertex first in its cell? then change 
-        if cellPos == vertex.cell.elements.head:
-            vertex.cell.elements.head = cellPos.next
-        # then relink adjacent listnodes (as long as they exist)
-        if cellPos.previous is not None:
-            cellPos.previous.next = cellPos.next
-        if cellPos.next is not None:
-            cellPos.next.previous = cellPos.previous
+        currentCell.elements.remove(vertex)
 
         # update indices of cells
         for cell in self.cells:
-            if cell.pre < vertex.cell.pre:
+            if cell.pre < currentCell.pre:
                 cell.pre += 1
                 cell.post -= 1
         
-        vertex.cell.pre += 1
+        currentCell.pre += 1
 
         # then, at last, create the new cell.
-        tmp = DL_list()
-        tmp.prepend(vertex.cellPos)
-        newCell = Cell(tmp, 1, self.size - 2)
-        vertex.cell = newCell
+        newCell = Cell(deque([vertex]), 1, self.size - 2)
+        graph.nodes[vertex]['cell'] = newCell
         self.cells = [newCell] + self.cells
-                
-
-class Vertex:
-    '''
-    Lightweight vertex. Stores (unique, integer) vertex identifier under label,
-    an adjacency list of arcs starting at this vertex. 
-    and pointers to the current cell (first position of cell, and the vertex's own position).
-    '''
-    def __init__(self, label: int) -> None:
-        self.label = label
-        self.cell: Cell = None
-        self.cellPos: ListNode = None
-        self.adj: list[Vertex] = []
-    
-    def __repr__(self) -> str:
-        return f"vertex {self.label}"
-    
-    def __hash__(self):
-        return hash(self.label)
-    
-    def __eq__(self, other: Vertex) -> bool:
-        # the best I can think of honestly
-        return self.label == other.label
-    
-    def findArc(self, arcTo : Vertex) -> Arc | None:
-        for arc in self.adj:
-            if arc.y == arcTo:
-                return arc
-        
-        return
-
-class Arc:
-    '''
-    Arc ie directed edge (x,y) of graph. Stores endpoints x and y, and a pointer to
-    its "twin" arc (y,x).
-    '''
-    def __init__(self, x : Vertex, y  : Vertex) -> None:
-        self.x = x
-        self.y = y
-        self.twin : Arc = None
-    
-    def __str__(self) -> str:
-        return f"({self.x}, {self.y})"
-    
-    def __repr__(self) -> str:
-        return str(self)
-    
-    def __eq__(self, other: Arc) -> bool:
-        return self.x == other.x and self.y == other.y
