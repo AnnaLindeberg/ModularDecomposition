@@ -1,6 +1,17 @@
 import networkx as nx
+from typing import Union
 # TODO: bad import
 from classes import *
+
+def subgraph(graph: nx.Graph, vertices: list[Union[int, Cell]]) -> nx.Graph:
+    ''' Return actual copied subgraph instance, rather than subgraph view.'''
+    subgraph = nx.Graph()
+    subgraph.add_nodes_from((n, graph.nodes[n]) for n in vertices)
+    subgraph.add_edges_from((n, nbr, d)
+        for n, nbrs in graph.adj.items() if n in vertices
+        for nbr, d in nbrs.items() if nbr in vertices)
+
+    return subgraph
 
 def bucket_group(arcs: list[tuple[int, int]], buckets: list[int]) -> list[list[tuple[int, int]]]:
     '''
@@ -35,6 +46,28 @@ def edgesFromCell(graph: nx.Graph, cell : Cell) -> list[tuple[int, int]]:
     
     return edges
 
+def mergeCells(cells: list[Cell]) -> Cell:
+    '''
+    Takes (consecutive for reasonable output) cells of partition and merge into new cell.
+    '''
+    resCell = cells[0].copy()
+    for cell in cells[1:]:
+        resCell.elements.extend(cell.elements)
+        resCell.post -= len(cell.elements)
+
+    return resCell
+
+def flattenToFrozen(cells: list[Cell]) -> frozenset:
+    res = []
+    for cell in cells:
+        for el in cell.elements:
+            if isinstance(el, Cell):
+                recCall = flattenToFrozen([el])
+                for rel in recCall:
+                    res.append(rel)
+            elif isinstance(el, int) or isinstance(el, str):
+                res.append(el)
+    return frozenset(res)
 
 # def edgeRepresentatives(graph: nx.Graph, edges: list[tuple[int, int]], fromCells: list[Cell]) -> list[tuple[Cell, Cell]]:
 #     # this should use radix grouping but TODO
@@ -95,15 +128,15 @@ def pivot(graph: nx.Graph, partition: Partition, pivotVertex: int, arcs: list[tu
             # and add the new cell to the partition
             # TODO: explain the maths here
             if cell.pre < xCell.pre:
-                # the cell we split comes before the cell of x, hence the newCell after cell
-                newCell = Cell(deque(vertices), partition.size - cell.post - len(vertices), cell.post)
-                cell.post = cell.post + len(vertices)
-                partition.cells.insert(partition.cells.index(cell) + 1, newCell)
-            elif cell.pre > xCell.pre:
                 # the cell we split comes after the cell of x, hence the newCell before cell
                 newCell = Cell(deque(vertices), cell.pre, partition.size - cell.pre - len(vertices))
                 cell.pre =  cell.pre + len(vertices)
                 partition.cells.insert(partition.cells.index(cell), newCell)
+            elif cell.pre > xCell.pre:
+                # the cell we split comes before the cell of x, hence the newCell after cell
+                newCell = Cell(deque(vertices), partition.size - cell.post - len(vertices), cell.post)
+                cell.post = cell.post + len(vertices)
+                partition.cells.insert(partition.cells.index(cell) + 1, newCell)
             else:
                 print("WARNING, your assumption of C_OLD ≠ X was invalid")
                 

@@ -17,7 +17,8 @@ class Cell:
         return hash((self.pre, self.post))
     
     def __str__(self) -> str:
-        return f"Cell {self.elements} with indices {self.pre, self.post}"
+        # return f"Cell {self.elements} with indices {self.pre, self.post}"
+        return f"Cell{str(self.elements)[6:-1]}"
 
     def __repr__(self) -> str:
         return str(self)

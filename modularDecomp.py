@@ -1,16 +1,28 @@
 import networkx as nx
 from collections import deque
+from typing import Union
 # TODO: bad imports
 from classes import *
 import auxiliary as aux
 
 
-def recOVP(graph: nx.Graph, vertexPrio: list[int]) -> nx.DiGraph:
+def recOVP(graph: nx.Graph, vertexPrio: list[Union[int, Cell]]) -> nx.DiGraph:
     if nx.number_of_nodes(graph) == 1:
-        return nx.DiGraph(graph)
+        T = nx.DiGraph()
+        # there's some "scrap" data still in graph so we clean up by adding node manually
+        for vertex in graph:
+            if isinstance(vertex, Cell):
+                # I think this is always true here
+                vertex = frozenset(vertex.elements)
+                T.add_node(vertex)
+                T.graph['root'] = vertex
+            else:
+                raise NotImplementedError("Should this really happen")
+        return T
     
     # pick isolate or highest no. vertex
     possibleIsolated = list(nx.isolates(graph))
+
     if possibleIsolated:
         pivotVertex = possibleIsolated[0]
     else:
@@ -18,18 +30,18 @@ def recOVP(graph: nx.Graph, vertexPrio: list[int]) -> nx.DiGraph:
             if vertex in graph:
                 pivotVertex = vertex
                 break
-        raise Exception("this shouldn't happen anna")
 
     # prepare graph and partition
     partition = prepareGraph(graph)
     partition.createCell(graph, pivotVertex)
-    modules, _ = aux.orderedVertexPartition(graph, partition, set()).cells
+    modules = aux.orderedVertexPartition(graph, partition, set())[0].cells
+    # modules = partition.cells
 
     # initialize root node
-    rootVertex = tuple(graph.nodes)
+    rootVertex = aux.flattenToFrozen(modules)
     MDtree = nx.DiGraph()
     MDtree.add_node(rootVertex)
-    MDtree['root'] = rootVertex
+    MDtree.graph['root'] = rootVertex
 
     # MD label this node (?) TODO
     # if not nx.is_connected(graph):
@@ -40,10 +52,12 @@ def recOVP(graph: nx.Graph, vertexPrio: list[int]) -> nx.DiGraph:
     #     MDtree.nodes[rootVertex]['MDlabel'] = 'prime'
     
     for module in modules:
-        subgraph = nx.subgraph(graph, module.elements)
+        subgraph = aux.subgraph(graph, module.elements)
         subtree = recOVP(subgraph, vertexPrio)
-        MDtree = nx.disjoint_union(MDtree, subtree)
-        MDtree.add_edge(MDtree['root'], subtree['root'])
+        MDtree = nx.compose(subtree, MDtree)
+        root = MDtree.graph['root']
+        child = subtree.graph['root']
+        MDtree.add_edge(root, child)
     
     return MDtree
 
@@ -52,7 +66,14 @@ def unreducedMD(graph: nx.Graph, partition: Partition) -> nx.DiGraph:
     Meant to implement the full algorithm of paper.
     '''
     if nx.number_of_nodes(graph) == 1:
-        return nx.DiGraph(graph)
+        T = nx.DiGraph()
+        # there's some "scrap" data still in graph so we clean up by adding node manually
+        for vertex in graph:
+            if isinstance(vertex, int):
+                vertex = frozenset([vertex])
+                T.add_node(vertex)
+                T.graph['root'] = vertex
+        return T
     
     # pick "smallest" vertex
     # TODO: what, exactly, do they mean with smallest here? see alg 1 of paper
@@ -63,20 +84,27 @@ def unreducedMD(graph: nx.Graph, partition: Partition) -> nx.DiGraph:
     partition.createCell(graph, pivotVertex)
     maxModules, quotientEdges = aux.orderedVertexPartition(graph, partition, set())
 
+    print("G/P(G,v) is ", maxModules)
     # find the quotient graph G/G(P,v) and MD of it
     quotient = nx.Graph()
     quotientEdges = aux.streamlineEdges(graph, quotientEdges, maxModules)
-    quotient.add_nodes_from(maxModules)
+    quotient.add_nodes_from(maxModules.cells)
     quotient.add_edges_from(quotientEdges)
-    priority = partition.flatList(reversed=True)
+    priority = maxModules.cells.copy()
+    priority.reverse()
     quotientMD = recOVP(quotient, priority)
 
     # find MD of each module in maxModules and attach to MD of quotient
     for module in maxModules.cells:
-        subgraph = nx.subgraph(graph, module.elements)
+        subgraph = aux.subgraph(graph, module.elements)
         subPartition = maxModules.restrict(subgraph, [module])
         subtree = unreducedMD(subgraph, subPartition)
-        quotientMD = nx.compose(quotientMD, subtree)
+
+        # now attach this subtree to the partial MD we have established
+        if 'root' in subtree.graph:
+            quotientMD = nx.compose(subtree, quotientMD)
+        else:
+            pass
 
     return quotientMD
 
