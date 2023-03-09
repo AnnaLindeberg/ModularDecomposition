@@ -3,11 +3,9 @@ from auxiliary import *
 from modularDecomp import *
 import networkx as nx
 import matplotlib.pyplot as plt
-import pydot
-from networkx.drawing.nx_pydot import graphviz_layout
 
 def drawMD(tree: nx.DiGraph) -> None:
-    pos = graphviz_layout(tree, prog="dot")
+    pos = nx.nx_agraph.graphviz_layout(tree, prog="dot")
     labels = {}
     for vertex in tree:
         if 'MDlabel' in tree.nodes[vertex]:
@@ -25,16 +23,10 @@ edges = ['ab', 'ad', 'ae', 'bd', 'be', 'cd', 'ce', 'df', 'ef', 'fg', 'fh', 'gh',
 # edges = [(charToIntLegend.index(s[0]), charToIntLegend.index(s[1])) for s in edges]
 edges = [(s[0], s[1]) for s in edges]
 
-G = nx.Graph()
-G.add_edges_from(edges)
-# print(G)
-# nx.draw(G, with_labels=True)
-# plt.show()
+# G = nx.Graph()
+# G.add_edges_from(edges)
+
+G = nx.complete_graph(5)
 
 MD = modularDecomposition(G)
 drawMD(MD)
-
-# H = nx.complete_graph(4)
-# MD = modularDecomposition(H)
-# nx.draw(MD, with_labels=True)
-# plt.show()

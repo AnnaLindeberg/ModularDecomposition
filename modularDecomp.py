@@ -1,9 +1,9 @@
 import networkx as nx
 from collections import deque
 from typing import Union
+import auxiliary as aux
 # TODO: bad imports
 from classes import *
-import auxiliary as aux
 
 
 def recOVP(graph: nx.Graph, vertexPrio: list[Union[int, Cell]]) -> nx.DiGraph:
@@ -43,13 +43,14 @@ def recOVP(graph: nx.Graph, vertexPrio: list[Union[int, Cell]]) -> nx.DiGraph:
     MDtree.add_node(rootVertex)
     MDtree.graph['root'] = rootVertex
 
-    # MD label this node (?) TODO
-    # if not nx.is_connected(graph):
-    #     MDtree.nodes[rootVertex]['MDlabel'] = 'parallel'
-    # elif not nx.is_connected(nx.complement(graph)):
-    #     MDtree.nodes[rootVertex]['MDlabel'] = 'series'
-    # else:
-    #     MDtree.nodes[rootVertex]['MDlabel'] = 'prime'
+    # MD label this node
+    # TODO: time complexity here is unclear
+    if not nx.is_connected(graph):
+        MDtree.nodes[rootVertex]['MDlabel'] = '0'
+    elif not nx.is_connected(nx.complement(graph)):
+        MDtree.nodes[rootVertex]['MDlabel'] = '1'
+    else:
+        MDtree.nodes[rootVertex]['MDlabel'] = 'p'
     
     for module in modules:
         subgraph = aux.subgraph(graph, module.elements)
@@ -84,7 +85,6 @@ def unreducedMD(graph: nx.Graph, partition: Partition) -> nx.DiGraph:
     partition.createCell(graph, pivotVertex)
     maxModules, quotientEdges = aux.orderedVertexPartition(graph, partition, set())
 
-    print("G/P(G,v) is ", maxModules)
     # find the quotient graph G/G(P,v) and MD of it
     quotient = nx.Graph()
     quotientEdges = aux.streamlineEdges(graph, quotientEdges, maxModules)
@@ -108,12 +108,36 @@ def unreducedMD(graph: nx.Graph, partition: Partition) -> nx.DiGraph:
 
     return quotientMD
 
-def reduceMD(modDecomp: nx.DiGraph) -> nx.DiGraph:
+def reduceMD(modDecomp: nx.DiGraph, currentVertex: frozenset) -> None:
     '''
     Meant to calculate reduced modular decomposition from (possibly) unreduced modular decomposition.
     '''
-    # TODO: actually reduce
-    return modDecomp
+    newChildren = []
+    verticesToRemove = []
+    callAgain = False
+    for neighbor in modDecomp[currentVertex]:
+        if ('MDlabel' in modDecomp.nodes[neighbor] and
+             modDecomp.nodes[neighbor]['MDlabel'] == modDecomp.nodes[currentVertex]['MDlabel']):
+            for child in modDecomp[neighbor]:
+                newChildren.append((currentVertex, child))
+                if ('MDlabel' in modDecomp.nodes[child] and
+                    modDecomp.nodes[child]['MDlabel'] == modDecomp.nodes[currentVertex]['MDlabel']):
+                    callAgain = True
+            verticesToRemove.append(neighbor)
+    
+    modDecomp.add_edges_from(newChildren)
+    for redundantVertex in verticesToRemove:
+        modDecomp.remove_node(redundantVertex)
+    
+    if callAgain:
+        reduceMD(modDecomp, currentVertex)
+    else:
+        for neighbor in modDecomp[currentVertex]:
+            if 'MDlabel' in modDecomp.nodes[neighbor]:
+                reduceMD(modDecomp, currentVertex)
+    
+
+    
 
 def prepareGraph(graph: nx.Graph) -> Partition:
     '''
@@ -147,4 +171,9 @@ def modularDecomposition(graph: nx.Graph) -> nx.DiGraph:
     Meant to be the only call user of nx actually makes.
     '''
     partition = prepareGraph(graph)
-    return reduceMD(unreducedMD(graph, partition))
+    MD = unreducedMD(graph, partition)
+    for vertex, deg in MD.in_degree():
+        if deg == 0:
+            root = vertex
+    reduceMD(MD, root)
+    return MD
