@@ -58,6 +58,9 @@ class Partition:
     def __repr__(self) -> str:
         return str(self)
     
+    def __contains__(self, cell: Cell) -> bool:
+        return cell in self.cells
+    
     def restrict(self, graph: nx.Graph, cells: list[Cell]) -> Partition:
         '''
         Returns new partition restricted to copies of the given cells. 
@@ -130,3 +133,17 @@ class Partition:
         newCell = Cell(deque([vertex]), 1, self.size - 2)
         graph.nodes[vertex]['cell'] = newCell
         self.cells = [newCell] + self.cells
+    
+    def flatList(self, reversed=False) -> list(int):
+        '''
+        Returns list of vertices in partition, ordered as they appear in the partition.
+        '''
+        res = []
+        for cell in self.cells:
+            for v in cell.elements:
+                res.append(v)
+        
+        if reversed:
+            res.reverse()
+
+        return res

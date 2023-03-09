@@ -36,6 +36,29 @@ def edgesFromCell(graph: nx.Graph, cell : Cell) -> list[tuple[int, int]]:
     return edges
 
 
+# def edgeRepresentatives(graph: nx.Graph, edges: list[tuple[int, int]], fromCells: list[Cell]) -> list[tuple[Cell, Cell]]:
+#     # this should use radix grouping but TODO
+#     # here naive approach
+#     cellEdges = set()
+
+#     for x,y in edges:
+#         xCell = graph.nodes[x]['cell']
+#         yCell = graph.nodes[y]['cell']
+#         cellEdges.add((xCell, yCell))
+    
+#     return list(cellEdges)
+
+def streamlineEdges(graph: nx.Graph, edges: set[tuple[int, int]], partition: Partition) -> list[tuple[Cell, Cell]]:
+    cellEdges = set()
+    for x, y in edges:
+        xCell = graph.nodes[x]['cell']
+        yCell = graph.nodes[y]['cell']
+        if xCell not in partition or yCell not in partition:
+            raise Exception('something is off')
+        
+        cellEdges.add((xCell, yCell))
+    return list(cellEdges)
+
 def pivot(graph: nx.Graph, partition: Partition, pivotVertex: int, arcs: list[tuple[int, int]]) -> None:
         ''' 
         Pivot at given vertex x. Variable arcs should contain list of all arcs (x,y) where y
@@ -129,10 +152,11 @@ def split(graph: nx.Graph, partition : Partition, xCell : Cell, arcs : list[tupl
 
     return cellsInxCell, non_xCells
 
-    
-def orderedVertexPartition(graph: nx.Graph, partition: Partition) -> Partition:
+
+def orderedVertexPartition(graph: nx.Graph, partition: Partition, 
+                           collectedEdges: set[tuple[int, int]]) -> tuple[Partition, set[tuple[int, int]]]:
     if len(partition.cells) == 1:
-        return partition
+        return partition, collectedEdges
     
     # pick non-maximal element of partition
     # TODO: why? is it only for run-time analysis?
@@ -144,14 +168,24 @@ def orderedVertexPartition(graph: nx.Graph, partition: Partition) -> Partition:
     edges = edgesFromCell(graph, cell)
     inCell, notInCell = split(graph, partition, cell, edges)
     
+    # collect edges, needed to compute quotient G/P(G,v)
+    # collectedEdges.extend(edgeRepresentatives(graph, edges, inCell))
+    collectedEdges.update(edges)
+
+    # calls to G|cell
     gRestrictToCell = nx.subgraph(graph, cell.elements)
     leftPartition = partition.restrict(gRestrictToCell, inCell)
-    leftCall = orderedVertexPartition(gRestrictToCell, leftPartition)
+    leftCall, moreEdges = orderedVertexPartition(gRestrictToCell, leftPartition, collectedEdges)
 
+    collectedEdges.update(moreEdges)
+
+    # calls to G - cell
     gWithoutCell = nx.subgraph(graph, [vertex for vertex in graph if vertex not in cell.elements])
     rightPartition = partition.restrict(gWithoutCell, notInCell)
-    rightCall = orderedVertexPartition(gWithoutCell, rightPartition)
+    rightCall, moreEdges = orderedVertexPartition(gWithoutCell, rightPartition, collectedEdges)
     
+    collectedEdges.update(moreEdges)
+
     leftCall.union(rightCall)
 
-    return leftCall
+    return leftCall, collectedEdges

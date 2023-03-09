@@ -5,13 +5,47 @@ from classes import *
 import auxiliary as aux
 
 
-def recOVP(partition: Partition) -> nx.DiGraph:
-    if partition.size  == 1:
-        T = nx.DiGraph()
-        T.add_node(partition.cells[0].elements.head.data.label)
-        return T
+def recOVP(graph: nx.Graph, vertexPrio: list[int]) -> nx.DiGraph:
+    if nx.number_of_nodes(graph) == 1:
+        return nx.DiGraph(graph)
     
-    # TODO: unfinished
+    # pick isolate or highest no. vertex
+    possibleIsolated = list(nx.isolates(graph))
+    if possibleIsolated:
+        pivotVertex = possibleIsolated[0]
+    else:
+        for vertex in vertexPrio:
+            if vertex in graph:
+                pivotVertex = vertex
+                break
+        raise Exception("this shouldn't happen anna")
+
+    # prepare graph and partition
+    partition = prepareGraph(graph)
+    partition.createCell(graph, pivotVertex)
+    modules, _ = aux.orderedVertexPartition(graph, partition, set()).cells
+
+    # initialize root node
+    rootVertex = tuple(graph.nodes)
+    MDtree = nx.DiGraph()
+    MDtree.add_node(rootVertex)
+    MDtree['root'] = rootVertex
+
+    # MD label this node (?) TODO
+    # if not nx.is_connected(graph):
+    #     MDtree.nodes[rootVertex]['MDlabel'] = 'parallel'
+    # elif not nx.is_connected(nx.complement(graph)):
+    #     MDtree.nodes[rootVertex]['MDlabel'] = 'series'
+    # else:
+    #     MDtree.nodes[rootVertex]['MDlabel'] = 'prime'
+    
+    for module in modules:
+        subgraph = nx.subgraph(graph, module.elements)
+        subtree = recOVP(subgraph, vertexPrio)
+        MDtree = nx.disjoint_union(MDtree, subtree)
+        MDtree.add_edge(MDtree['root'], subtree['root'])
+    
+    return MDtree
 
 def unreducedMD(graph: nx.Graph, partition: Partition) -> nx.DiGraph:
     '''
@@ -25,10 +59,26 @@ def unreducedMD(graph: nx.Graph, partition: Partition) -> nx.DiGraph:
     # here we pick smallest as appearing first in the nx-graph: is that a bad idea?
     pivotVertex = list(graph)[0]
 
-    # find the partition G(P,v) with ordered vertex partition
+    # find the partition G(P,v) of maximal v-avoiding modules with ordered vertex partition
     partition.createCell(graph, pivotVertex)
-    maxModules = aux.orderedVertexPartition(graph, partition)
-    return maxModules
+    maxModules, quotientEdges = aux.orderedVertexPartition(graph, partition, set())
+
+    # find the quotient graph G/G(P,v) and MD of it
+    quotient = nx.Graph()
+    quotientEdges = aux.streamlineEdges(graph, quotientEdges, maxModules)
+    quotient.add_nodes_from(maxModules)
+    quotient.add_edges_from(quotientEdges)
+    priority = partition.flatList(reversed=True)
+    quotientMD = recOVP(quotient, priority)
+
+    # find MD of each module in maxModules and attach to MD of quotient
+    for module in maxModules.cells:
+        subgraph = nx.subgraph(graph, module.elements)
+        subPartition = maxModules.restrict(subgraph, [module])
+        subtree = unreducedMD(subgraph, subPartition)
+        quotientMD = nx.compose(quotientMD, subtree)
+
+    return quotientMD
 
 def reduceMD(modDecomp: nx.DiGraph) -> nx.DiGraph:
     '''
