@@ -1,9 +1,8 @@
 import networkx as nx
-from typing import Union
 # TODO: bad import
 from classes import *
 
-def subgraph(graph: nx.Graph, vertices: list[Union[int, Cell]]) -> nx.Graph:
+def subgraph(graph: nx.Graph, vertices) -> nx.Graph:
     ''' Return actual copied subgraph instance, rather than subgraph view.'''
     subgraph = nx.Graph()
     subgraph.add_nodes_from((n, graph.nodes[n]) for n in vertices)

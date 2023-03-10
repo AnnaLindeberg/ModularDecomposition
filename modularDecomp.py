@@ -1,12 +1,11 @@
 import networkx as nx
 from collections import deque
-from typing import Union
 import auxiliary as aux
 # TODO: bad imports
 from classes import *
 
 
-def recOVP(graph: nx.Graph, vertexPrio: list[Union[int, Cell]]) -> nx.DiGraph:
+def recOVP(graph: nx.Graph, vertexPrio) -> nx.DiGraph:
     if nx.number_of_nodes(graph) == 1:
         T = nx.DiGraph()
         # there's some "scrap" data still in graph so we clean up by adding node manually
