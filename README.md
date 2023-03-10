@@ -4,6 +4,10 @@ Rough implementation of O(n+m*log(n)) time algorithm for finding the modular dec
 Based on [this](https://doi.org/10.46298/dmtcs.274) [1] algorithm of McConnell and Spinrad (2000). This implementation
 might not have the same time complexity though, since it makes some calls to networkx and uses built in `deque` rather than custom-built doubly-linked lists. I don't have good control over the time complexity of these calls in comparison to what McConnell and Spinrad uses in their proofs. Need to think about it, and possibly re-build parts.
 
+## Requirements
+
+This code uses [NetworkX](https://networkx.org/documentation/stable/index.html#) and was written with version 3.0 in mind. Be aware of the separate requirements of NetworkX as well (eg. Python 3.8, 3.9 or 3.10). If one wants to use the example code in `paperExGraph`(see below) to visualize the calculated modular decomposition, the package [pygraphviz](http://pygraphviz.github.io/) and its dependencies are needed as well.
+
 ## How to use this code
 
 It suffices to import the function `modularDecomposition` from the file `modularDecomp`, if you just want a modular decomposition of a Networkx-graph. It simply takes an instance of `nx.Graph` and returns a modular decomposition tree T as a `nx.Digraph`. The nodes in T will be frozensets (since they need to be hashable) corresponding to the strong modules of the graph. Each inner node of T has an attribute `'MDlabel'` set to one of the strings `'0'`, `'1'` or `'p'` for series, parallel resp. prime nodes. Obtain these by, say, `T.nodes[v]['MDlabel']`. Note that  `modularDecomposition` will, as a side-effect, add some vertex attributes to your input graph (namely 'cell' and 'cellIdx'). You can remove them if you'd like.
