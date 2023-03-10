@@ -1,6 +1,4 @@
-from classes import *
-from auxiliary import *
-from modularDecomp import *
+from modularDecomp import modularDecomposition
 import networkx as nx
 import matplotlib.pyplot as plt
 
@@ -18,15 +16,19 @@ def drawMD(tree: nx.DiGraph) -> None:
     nx.draw(tree, pos = pos, ax = None, labels = labels)
     plt.show()
 
+# Want to decompose the graph given in the paper?
+G = nx.Graph()
 edges = ['ab', 'ad', 'ae', 'bd', 'be', 'cd', 'ce', 'df', 'ef', 'fg', 'fh', 'gh', 'il', 'jl', 'kl']
 # charToIntLegend = 'abcdefghijkl'
 # edges = [(charToIntLegend.index(s[0]), charToIntLegend.index(s[1])) for s in edges]
 edges = [(s[0], s[1]) for s in edges]
+G.add_edges_from(edges)
 
-# G = nx.Graph()
-# G.add_edges_from(edges)
-
-G = nx.complete_graph(5)
+# You can, ofcourse, also use some nx-built-in graph such as
+# G = nx.complete_graph(5)
+# G = nx.path_graph(4)
+# G = nx.star_graph(4)
+# ... etc
 
 MD = modularDecomposition(G)
 drawMD(MD)
