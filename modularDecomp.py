@@ -125,7 +125,8 @@ def reduceMD(modDecomp: nx.DiGraph, currentVertex: frozenset) -> None:
                     callAgain = True
             verticesToRemove.append(neighbor)
     
-    modDecomp.add_edges_from(newChildren)
+    if newChildren:
+        modDecomp.add_edges_from(newChildren)
     for redundantVertex in verticesToRemove:
         modDecomp.remove_node(redundantVertex)
     
@@ -134,7 +135,7 @@ def reduceMD(modDecomp: nx.DiGraph, currentVertex: frozenset) -> None:
     else:
         for neighbor in modDecomp[currentVertex]:
             if 'MDlabel' in modDecomp.nodes[neighbor]:
-                reduceMD(modDecomp, currentVertex)
+                reduceMD(modDecomp, neighbor)
     
 
     
