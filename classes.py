@@ -1,9 +1,8 @@
-from __future__ import annotations
 from collections import deque
 import networkx as nx
 
 class Cell:
-    def __init__(self, elements: deque[int], pre: int, post: int) -> None:
+    def __init__(self, elements, pre, post):
         # deque of elements – doubly linked list
         self.elements = elements
         # integers counting elements before/after this cell, more concretely:
@@ -16,24 +15,24 @@ class Cell:
     def __hash__(self):
         return hash((self.pre, self.post))
     
-    def __str__(self) -> str:
+    def __str__(self):
         # return f"Cell {self.elements} with indices {self.pre, self.post}"
         return f"Cell{str(self.elements)[6:-1]}"
 
-    def __repr__(self) -> str:
+    def __repr__(self):
         return str(self)
     
-    def __lt__(self, otherCell: Cell) -> bool:
+    def __lt__(self, otherCell):
         # assumes cells are part of same partition
         return self.pre < otherCell.pre
 
-    def __contains__(self, vertex: int):
+    def __contains__(self, vertex):
         return vertex in self.elements
     
-    def __eq__(self, other: Cell) -> bool:
+    def __eq__(self, other):
         return self.elements == other.elements and self.pre == other.pre and self.post == other.post
     
-    def copy(self) -> Cell:
+    def copy(self):
         '''
         Returns a copy of this cell, including a (shallow) copy of its list of elements. 
         '''
@@ -42,7 +41,7 @@ class Cell:
 
 class Partition:
 
-    def __init__(self, cells: list[Cell], size: int) -> None:
+    def __init__(self, cells, size):
         '''
         
         '''
@@ -50,19 +49,19 @@ class Partition:
         #no of nodes in partition ie in G
         self.size = size
     
-    def __str__(self) -> str:
+    def __str__(self):
         s = f"Partition of size {self.size} with cells:\n"
         for cell in self.cells:
             s += str(cell) + '\n'
         return s
     
-    def __repr__(self) -> str:
+    def __repr__(self):
         return str(self)
     
-    def __contains__(self, cell: Cell) -> bool:
+    def __contains__(self, cell):
         return cell in self.cells
     
-    def restrict(self, graph: nx.Graph, cells: list[Cell]) -> Partition:
+    def restrict(self, graph, cells):
         '''
         Returns new partition restricted to copies of the given cells. 
         In particular, if all cells of the partition is given as input, a copy of the partition is given.
@@ -107,7 +106,7 @@ class Partition:
         
         self.size += partition.size
 
-    def createCell(self, graph: nx.Graph, vertex: int) -> None:
+    def createCell(self, graph, vertex):
         '''
         Takes a vertex in the partition and puts it in its own cell.
         Usually called when the partition has a single cell, singling out
@@ -135,7 +134,7 @@ class Partition:
         graph.nodes[vertex]['cell'] = newCell
         self.cells = [newCell] + self.cells
     
-    def flatList(self, reversed=False) -> list(int):
+    def flatList(self, reversed=False):
         '''
         Returns list of vertices in partition, ordered as they appear in the partition.
         '''

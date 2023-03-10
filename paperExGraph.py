@@ -2,7 +2,7 @@ from modularDecomp import modularDecomposition
 import networkx as nx
 import matplotlib.pyplot as plt
 
-def drawMD(tree: nx.DiGraph) -> None:
+def drawMD(tree):
     pos = nx.nx_agraph.graphviz_layout(tree, prog="dot")
     labels = {}
     for vertex in tree:

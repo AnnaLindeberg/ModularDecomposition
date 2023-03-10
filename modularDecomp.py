@@ -5,7 +5,7 @@ import auxiliary as aux
 from classes import *
 
 
-def recOVP(graph: nx.Graph, vertexPrio) -> nx.DiGraph:
+def recOVP(graph, vertexPrio):
     if nx.number_of_nodes(graph) == 1:
         T = nx.DiGraph()
         # there's some "scrap" data still in graph so we clean up by adding node manually
@@ -61,7 +61,7 @@ def recOVP(graph: nx.Graph, vertexPrio) -> nx.DiGraph:
     
     return MDtree
 
-def unreducedMD(graph: nx.Graph, partition: Partition) -> nx.DiGraph:
+def unreducedMD(graph, partition):
     '''
     Meant to implement the full algorithm of paper.
     '''
@@ -107,7 +107,7 @@ def unreducedMD(graph: nx.Graph, partition: Partition) -> nx.DiGraph:
 
     return quotientMD
 
-def reduceMD(modDecomp: nx.DiGraph, currentVertex: frozenset) -> None:
+def reduceMD(modDecomp, currentVertex):
     '''
     Meant to calculate reduced modular decomposition from (possibly) unreduced modular decomposition.
     '''
@@ -139,7 +139,7 @@ def reduceMD(modDecomp: nx.DiGraph, currentVertex: frozenset) -> None:
 
     
 
-def prepareGraph(graph: nx.Graph) -> Partition:
+def prepareGraph(graph):
     '''
     Takes nx-graph (undirected) G and outputs a partition with a single cell containing
     all vertices of G. Moreover, G is equipped with proper vertex- and edge-attributes as needed, namely:
@@ -166,7 +166,7 @@ def prepareGraph(graph: nx.Graph) -> Partition:
 
 
 
-def modularDecomposition(graph: nx.Graph) -> nx.DiGraph:
+def modularDecomposition(graph):
     '''
     Meant to be the only call user of nx actually makes.
     '''

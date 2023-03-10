@@ -2,7 +2,7 @@ import networkx as nx
 # TODO: bad import
 from classes import *
 
-def subgraph(graph: nx.Graph, vertices) -> nx.Graph:
+def subgraph(graph, vertices):
     ''' Return actual copied subgraph instance, rather than subgraph view.'''
     subgraph = nx.Graph()
     subgraph.add_nodes_from((n, graph.nodes[n]) for n in vertices)
@@ -12,7 +12,7 @@ def subgraph(graph: nx.Graph, vertices) -> nx.Graph:
 
     return subgraph
 
-def bucket_group(arcs: list[tuple[int, int]], buckets: list[int]) -> list[list[tuple[int, int]]]:
+def bucket_group(arcs, buckets):
     '''
     Bucket group the given arcs into the given buckets: i.e. return a semi-sorted 
     version of arcs where arcs with the same first coordinate appear consecutive.
@@ -32,7 +32,7 @@ def bucket_group(arcs: list[tuple[int, int]], buckets: list[int]) -> list[list[t
     
     return res
 
-def edgesFromCell(graph: nx.Graph, cell : Cell) -> list[tuple[int, int]]:
+def edgesFromCell(graph, cell):
     '''
     Takes cell C and returns arcs (x,y) where x lies in C, y does not.
     '''
@@ -45,7 +45,7 @@ def edgesFromCell(graph: nx.Graph, cell : Cell) -> list[tuple[int, int]]:
     
     return edges
 
-def mergeCells(cells: list[Cell]) -> Cell:
+def mergeCells(cells):
     '''
     Takes (consecutive for reasonable output) cells of partition and merge into new cell.
     '''
@@ -56,7 +56,7 @@ def mergeCells(cells: list[Cell]) -> Cell:
 
     return resCell
 
-def flattenToFrozen(cells: list[Cell]) -> frozenset:
+def flattenToFrozen(cells):
     res = []
     for cell in cells:
         for el in cell.elements:
@@ -68,19 +68,7 @@ def flattenToFrozen(cells: list[Cell]) -> frozenset:
                 res.append(el)
     return frozenset(res)
 
-# def edgeRepresentatives(graph: nx.Graph, edges: list[tuple[int, int]], fromCells: list[Cell]) -> list[tuple[Cell, Cell]]:
-#     # this should use radix grouping but TODO
-#     # here naive approach
-#     cellEdges = set()
-
-#     for x,y in edges:
-#         xCell = graph.nodes[x]['cell']
-#         yCell = graph.nodes[y]['cell']
-#         cellEdges.add((xCell, yCell))
-    
-#     return list(cellEdges)
-
-def streamlineEdges(graph: nx.Graph, edges: set[tuple[int, int]], partition: Partition) -> list[tuple[Cell, Cell]]:
+def streamlineEdges(graph, edges, partition):
     cellEdges = set()
     for x, y in edges:
         xCell = graph.nodes[x]['cell']
@@ -91,7 +79,7 @@ def streamlineEdges(graph: nx.Graph, edges: set[tuple[int, int]], partition: Par
         cellEdges.add((xCell, yCell))
     return list(cellEdges)
 
-def pivot(graph: nx.Graph, partition: Partition, pivotVertex: int, arcs: list[tuple[int, int]]) -> None:
+def pivot(graph, partition, pivotVertex, arcs):
         ''' 
         Pivot at given vertex x. Variable arcs should contain list of all arcs (x,y) where y
         lies in some cell of a pre-decided subset Q of the underlying partition. 
@@ -149,7 +137,7 @@ def pivot(graph: nx.Graph, partition: Partition, pivotVertex: int, arcs: list[tu
                 graph.nodes[vertex]['cellIdx'] = newCell.elements.index(vertex)
 
 
-def split(graph: nx.Graph, partition : Partition, xCell : Cell, arcs : list[tuple[int, int]]) -> tuple[list[Cell], list[Cell]]:
+def split(graph, partition, xCell, arcs):
 
     # TODO: is it really necessary to give the buckets here, seems dumb
     # anyway a lot of extra iteration here –– remove
@@ -185,8 +173,7 @@ def split(graph: nx.Graph, partition : Partition, xCell : Cell, arcs : list[tupl
     return cellsInxCell, non_xCells
 
 
-def orderedVertexPartition(graph: nx.Graph, partition: Partition, 
-                           collectedEdges: set[tuple[int, int]]) -> tuple[Partition, set[tuple[int, int]]]:
+def orderedVertexPartition(graph, partition, collectedEdges):
     if len(partition.cells) == 1:
         return partition, collectedEdges
     
