@@ -2,3 +2,4 @@ env/*
 .vscode/*
 .pytest_cache/*
 .DS_store
+selfcomplement.py

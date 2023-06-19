@@ -24,7 +24,7 @@ def drawMD(tree):
 # edges = [(s[0], s[1]) for s in edges]
 # G.add_edges_from(edges)
 
-# You can, ofcourse, also use some nx-built-in graph such as
+# You can, of course, also use some nx-built-in graph such as
 # G = nx.complete_graph(100)
 # G = nx.path_graph(4)
 # G = nx.star_graph(4)
@@ -47,7 +47,7 @@ for module in MD:
 
 
 # Want to draw the graph+MD as well?
-# Note that the MD-tree is drawn when you close the given graph.
+# Note that the MD-tree is drawn when you close the window with the graph.
 nx.draw(G, with_labels=True)
 plt.show()
 drawMD(MD)
