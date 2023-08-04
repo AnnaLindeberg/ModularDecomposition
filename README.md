@@ -10,7 +10,7 @@ This code uses [NetworkX](https://networkx.org/documentation/stable/index.html#)
 
 ## How to use this code
 
-It suffices to import the function `modularDecomposition` from the file `modularDecomp`, if you just want a modular decomposition of a Networkx-graph. It simply takes an instance of `nx.Graph` and returns a modular decomposition tree T as a `nx.Digraph`. The nodes in T will be frozensets (since they need to be hashable) corresponding to the strong modules of the graph. Each inner node of T has an attribute `'MDlabel'` set to one of the strings `'0'`, `'1'` or `'p'` for series, parallel resp. prime nodes. Obtain these by, say, `T.nodes[v]['MDlabel']`. Note that  `modularDecomposition` will, as a side-effect, add some vertex attributes to your input graph (namely 'cell' and 'cellIdx'). You can remove them if you'd like.
+It suffices to import the function `modularDecomposition` from the file `modularDecomp`, if you just want a modular decomposition of a Networkx-graph. It simply takes an instance of `nx.Graph` and returns a modular decomposition tree T as a `nx.Digraph`. The nodes in T will be frozensets (since they need to be hashable) corresponding to the strong modules of the graph. Each inner node of T has an attribute `'MDlabel'` set to one of the strings `'0'`, `'1'` or `'p'` for parallel, series resp. prime nodes. Obtain these by, say, `T.nodes[v]['MDlabel']`. Note that  `modularDecomposition` will, as a side-effect, add some vertex attributes to your input graph (namely 'cell' and 'cellIdx'). You can remove them if you'd like.
 
 See also the file `paperExGraph.py` for example of use plus a small function for fast end easy visualization of your MD-tree.
 
